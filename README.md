@@ -9,7 +9,7 @@ Manifests / modules to help the deploy our apps on CentOS 7.1 with either Ansibl
     $ vagrant up
     $ vagrant provision # For updates
 
-Open: https://192.168.0.43/
+Open: https://192.168.0.44/
 
 SSH: `$ vagrant ssh`
 
