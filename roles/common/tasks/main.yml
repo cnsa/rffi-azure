@@ -1,0 +1,58 @@
+---
+- name: install packages
+  yum: name={{ item }} state=present
+  with_items:
+    - ntp
+    - crontabs
+    - libselinux-python
+    - mc
+    - nano
+
+- service: name=ntpd state=started enabled=yes
+
+- name: check for qpid
+  shell: rpm -qa | grep qpid
+  register: qpidd_exist
+  changed_when: false
+  ignore_errors: True
+
+- service: name=qpidd state=stopped enabled=no
+  when: qpidd_exist|skipped
+
+- include: users.yml
+- include: ssh.yml
+- include: selinux.yml
+
+- name: get iptables rules
+  shell: iptables -L -n
+  register: iptablesrules
+  changed_when: false
+  always_run: yes
+
+- name: open ports via iptables
+  firewalld: port={{item}}/tcp permanent=true  state=enabled
+  with_items: chef.server.ports
+  notify:
+  - firewalld reload
+
+- name: set hosts
+  lineinfile:
+    dest=/etc/hosts
+    line="127.0.1.1 {{ inventory_hostname }} {{ ansible_hostname }}"
+    regexp="^127\.0\.1\.1.*$"
+    state=present
+
+- name: set hosts
+  lineinfile:
+    dest=/etc/hosts
+    line="{{ hostvars[inventory_hostname][network_interface]['ipv4']['address'] }} {{ inventory_hostname }} {{ ansible_hostname }}"
+    regexp="^{{ hostvars[inventory_hostname][network_interface]['ipv4']['address'] }}.*$"
+    state=present
+
+- name: set fqdn
+  lineinfile:
+    dest=/etc/sysconfig/network
+    line="HOSTNAME={{ inventory_hostname }}"
+    regexp="HOSTNAME="
+    state=present
+  notify: network restart

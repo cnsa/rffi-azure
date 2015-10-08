@@ -1,0 +1,7 @@
+.vagrant/*
+*.box
+.envrc
+hosts
+settings.yml
+production
+group_vars/production/config.yml
